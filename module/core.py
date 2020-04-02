@@ -22,14 +22,12 @@ def save(path, img):
 
 class OpenExr:
     def __init__(self, path = ""):
-        print(1)
         self._channels = dict()
         self._path = str(path)
         self._shape = None
         
         self._rewrite = False # rewrite exist file when is exist
         self._preserve_channels = True # Do not delete existing channels if the new channels are loaded from file 
-        print(2)
     
     def load(self, path = ""):
         if type(path) is not str:
@@ -45,11 +43,6 @@ class OpenExr:
             raise IOError("File is corrupted")
         dw = img.header()['displayWindow']
         size = (dw.max.y - dw.min.y + 1, dw.max.x - dw.min.x + 1)
-        
-        if self._shape is None:
-            self._shape = size
-        elif self._shape != size:
-            raise ValueError("Shapes must be same - " + str(self._shape) + " vs " + str(size) ) 
         
         for channel_name, channel_type in img.header()["channels"].items():
             # data

@@ -1,2 +1,2 @@
 # EasyOpenExr
-Knihovna, která vytváří jednodušší práci s OpenExr.
+The library which creates easier works with OpenExr.

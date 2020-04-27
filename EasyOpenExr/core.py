@@ -15,7 +15,7 @@ def load(path, get_header = False):
     exr = OpenExr(path)
     exr.load()
     if get_header:
-        return exr.channels#, exr.header
+        raise NotImplementedError("The parameter get_header is not implemented")
     return exr.channels
 
 def save(path, img):
@@ -102,7 +102,6 @@ class OpenExr:
         HEADER["channels"] = channels_type
 
         if type(self._compression) is not None:
-            print("str:", str(self._compression), str(self._compression._compression), "repr:", repr(self._compression), repr(self._compression.compression), "type:", type(self._compression), type(self._compression._compression))
             HEADER["compression"] = self._compression.compression
         
         # write data and save to file

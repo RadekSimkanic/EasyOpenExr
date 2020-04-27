@@ -1,6 +1,7 @@
 import OpenEXR, Imath
 import numpy as np
 import copy
+from . import compression as compress 
 
 def is_ok(path):
     if not OpenEXR.isOpenExrFile(path): 
@@ -10,10 +11,12 @@ def is_ok(path):
         return False
     return True
     
-def load(path):
+def load(path, get_header = False):
     exr = OpenExr(path)
     exr.load()
-    return exr.channels()
+    if get_header:
+        return exr.channels#, exr.header
+    return exr.channels
 
 def save(path, img):
     exr = OpenExr(path)
@@ -28,6 +31,7 @@ class OpenExr:
         
         self._rewrite = False # rewrite exist file when is exist
         self._preserve_channels = True # Do not delete existing channels if the new channels are loaded from file 
+        self._compression = None # default
     
     def load(self, path = ""):
         if type(path) is not str:
@@ -43,7 +47,11 @@ class OpenExr:
             raise IOError("File is corrupted")
         dw = img.header()['displayWindow']
         size = (dw.max.y - dw.min.y + 1, dw.max.x - dw.min.x + 1)
-        
+
+        # compression type
+        self._compression = compress.str_to_obj(img.header()["compression"])
+
+        # load data
         for channel_name, channel_type in img.header()["channels"].items():
             # data
             data = img.channel(channel_name)
@@ -58,6 +66,8 @@ class OpenExr:
             # create numpy channel in dictionary
             if channel_name not in self or self._preserve_channels:
                 self[channel_name] = np.fromstring(data, dtype = pix_type).reshape(size)
+        self._shape = size
+        print("HEADER: ", img.header() )
         
     def save(self, path = ""):
         if type(path) is not str:
@@ -90,6 +100,10 @@ class OpenExr:
         # prepare exr header
         HEADER = OpenEXR.Header(width, height)
         HEADER["channels"] = channels_type
+
+        if type(self._compression) is not None:
+            print("str:", str(self._compression), str(self._compression._compression), "repr:", repr(self._compression), repr(self._compression.compression), "type:", type(self._compression), type(self._compression._compression))
+            HEADER["compression"] = self._compression.compression
         
         # write data and save to file
         exr = OpenEXR.OutputFile(path, HEADER)
@@ -320,6 +334,16 @@ class OpenExr:
         if type(path) is not str:
             raise TypeError("Path must be string")
         self._path = path
+
+    @property
+    def compression(self):
+        return self._compression
+    
+    @compression.setter
+    def compression(self, compression):
+        if not isinstance(compression, (compress.NoCompression, compress.Rle, compress.Zips, compress.Zip, compress.Piz, compress.Pxr24) ):
+            raise TypeError("The type must be one of the compression type")
+        self._compression = compression
     
     @property
     def option_preserve_channels(self):
